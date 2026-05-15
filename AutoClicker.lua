@@ -1,43 +1,43 @@
---// Auto Clicker Pro (Fixed Version)
---// Roblox Mobile + PC
+--// Auto Key Spammer
+--// F = ضرب
+--// Q = KI
+--// V = ضغط
 
 local Players = game:GetService("Players")
-local TweenService = game:GetService("TweenService")
 local VirtualInputManager = game:GetService("VirtualInputManager")
 
 local LocalPlayer = Players.LocalPlayer
 local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 
---// حذف النسخة القديمة إذا موجودة
+--// حذف القديم
 pcall(function()
-    PlayerGui.AutoClickerPro:Destroy()
+	PlayerGui.AutoKeySpam:Destroy()
 end)
 
 --// الإعدادات
 local Settings = {
-    ClickInterval = 0.05,
-    ClickDuration = 0.01,
-    CircleSize = 40,
-    MaxCircles = 10,
+	Delay = 0.05
 }
 
---// المتغيرات
-local AutoClicker = {
-    Enabled = false,
-    Circles = {},
-    Hidden = false
+--// الحالات
+local CurrentMode = "ضرب"
+local Running = false
+
+local Keys = {
+	["ضرب"] = Enum.KeyCode.F,
+	["KI"] = Enum.KeyCode.Q,
+	["ضغط"] = Enum.KeyCode.V
 }
 
 --// GUI
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "AutoClickerPro"
+ScreenGui.Name = "AutoKeySpam"
 ScreenGui.ResetOnSpawn = false
 ScreenGui.Parent = PlayerGui
 
---// القائمة
 local Main = Instance.new("Frame")
-Main.Size = UDim2.new(0,220,0,260)
-Main.Position = UDim2.new(0.5,-110,0.5,-130)
+Main.Size = UDim2.new(0,230,0,220)
+Main.Position = UDim2.new(0.5,-115,0.5,-110)
 Main.BackgroundColor3 = Color3.fromRGB(25,25,35)
 Main.BorderSizePixel = 0
 Main.Active = true
@@ -51,7 +51,7 @@ local Title = Instance.new("TextLabel")
 Title.Size = UDim2.new(1,0,0,35)
 Title.BackgroundColor3 = Color3.fromRGB(35,35,50)
 Title.BorderSizePixel = 0
-Title.Text = "⚡ Auto Clicker"
+Title.Text = "⚡ Auto Spam"
 Title.TextColor3 = Color3.new(1,1,1)
 Title.Font = Enum.Font.GothamBold
 Title.TextSize = 16
@@ -59,281 +59,133 @@ Title.Parent = Main
 
 Instance.new("UICorner", Title).CornerRadius = UDim.new(0,12)
 
---// حاوية
-local Container = Instance.new("Frame")
-Container.BackgroundTransparency = 1
-Container.Size = UDim2.new(1,-20,1,-50)
-Container.Position = UDim2.new(0,10,0,45)
-Container.Parent = Main
-
-local Layout = Instance.new("UIListLayout")
-Layout.Padding = UDim.new(0,8)
-Layout.Parent = Container
+--// الحالة الحالية
+local Status = Instance.new("TextLabel")
+Status.Size = UDim2.new(1,-20,0,30)
+Status.Position = UDim2.new(0,10,0,50)
+Status.BackgroundTransparency = 1
+Status.Text = "الحالة الحالية: ضرب"
+Status.TextColor3 = Color3.new(1,1,1)
+Status.Font = Enum.Font.GothamBold
+Status.TextSize = 15
+Status.TextXAlignment = Enum.TextXAlignment.Left
+Status.Parent = Main
 
 --// زر تشغيل
 local ToggleBtn = Instance.new("TextButton")
-ToggleBtn.Size = UDim2.new(1,0,0,45)
+ToggleBtn.Size = UDim2.new(1,-20,0,45)
+ToggleBtn.Position = UDim2.new(0,10,0,90)
 ToggleBtn.BackgroundColor3 = Color3.fromRGB(0,170,100)
 ToggleBtn.Text = "▶ تشغيل"
 ToggleBtn.TextColor3 = Color3.new(1,1,1)
 ToggleBtn.Font = Enum.Font.GothamBold
 ToggleBtn.TextSize = 15
-ToggleBtn.Parent = Container
+ToggleBtn.Parent = Main
 
 Instance.new("UICorner", ToggleBtn).CornerRadius = UDim.new(0,10)
 
---// إضافة نقطة
-local AddBtn = Instance.new("TextButton")
-AddBtn.Size = UDim2.new(1,0,0,45)
-AddBtn.BackgroundColor3 = Color3.fromRGB(0,120,255)
-AddBtn.Text = "➕ إضافة نقطة"
-AddBtn.TextColor3 = Color3.new(1,1,1)
-AddBtn.Font = Enum.Font.GothamBold
-AddBtn.TextSize = 15
-AddBtn.Parent = Container
+--// زر ضرب
+local HitBtn = Instance.new("TextButton")
+HitBtn.Size = UDim2.new(0.3,0,0,40)
+HitBtn.Position = UDim2.new(0.03,0,0,150)
+HitBtn.BackgroundColor3 = Color3.fromRGB(200,70,70)
+HitBtn.Text = "ضرب"
+HitBtn.TextColor3 = Color3.new(1,1,1)
+HitBtn.Font = Enum.Font.GothamBold
+HitBtn.TextSize = 14
+HitBtn.Parent = Main
 
-Instance.new("UICorner", AddBtn).CornerRadius = UDim.new(0,10)
+Instance.new("UICorner", HitBtn).CornerRadius = UDim.new(0,10)
 
---// حذف نقطة
-local RemoveBtn = Instance.new("TextButton")
-RemoveBtn.Size = UDim2.new(1,0,0,45)
-RemoveBtn.BackgroundColor3 = Color3.fromRGB(200,60,60)
-RemoveBtn.Text = "➖ حذف نقطة"
-RemoveBtn.TextColor3 = Color3.new(1,1,1)
-RemoveBtn.Font = Enum.Font.GothamBold
-RemoveBtn.TextSize = 15
-RemoveBtn.Parent = Container
+--// زر KI
+local KiBtn = Instance.new("TextButton")
+KiBtn.Size = UDim2.new(0.3,0,0,40)
+KiBtn.Position = UDim2.new(0.35,0,0,150)
+KiBtn.BackgroundColor3 = Color3.fromRGB(70,120,255)
+KiBtn.Text = "KI"
+KiBtn.TextColor3 = Color3.new(1,1,1)
+KiBtn.Font = Enum.Font.GothamBold
+KiBtn.TextSize = 14
+KiBtn.Parent = Main
 
-Instance.new("UICorner", RemoveBtn).CornerRadius = UDim.new(0,10)
+Instance.new("UICorner", KiBtn).CornerRadius = UDim.new(0,10)
 
---// إخفاء/إظهار
-local HideBtn = Instance.new("TextButton")
-HideBtn.Size = UDim2.new(1,0,0,40)
-HideBtn.BackgroundColor3 = Color3.fromRGB(80,80,100)
-HideBtn.Text = "👁 إخفاء النقاط"
-HideBtn.TextColor3 = Color3.new(1,1,1)
-HideBtn.Font = Enum.Font.GothamBold
-HideBtn.TextSize = 14
-HideBtn.Parent = Container
+--// زر ضغط
+local PressBtn = Instance.new("TextButton")
+PressBtn.Size = UDim2.new(0.3,0,0,40)
+PressBtn.Position = UDim2.new(0.67,0,0,150)
+PressBtn.BackgroundColor3 = Color3.fromRGB(70,200,120)
+PressBtn.Text = "ضغط"
+PressBtn.TextColor3 = Color3.new(1,1,1)
+PressBtn.Font = Enum.Font.GothamBold
+PressBtn.TextSize = 14
+PressBtn.Parent = Main
 
-Instance.new("UICorner", HideBtn).CornerRadius = UDim.new(0,10)
+Instance.new("UICorner", PressBtn).CornerRadius = UDim.new(0,10)
 
---// السرعة
-local SpeedBox = Instance.new("TextBox")
-SpeedBox.Size = UDim2.new(1,0,0,35)
-SpeedBox.BackgroundColor3 = Color3.fromRGB(45,45,60)
-SpeedBox.Text = "50"
-SpeedBox.PlaceholderText = "سرعة الضغط بالمللي ثانية"
-SpeedBox.TextColor3 = Color3.new(1,1,1)
-SpeedBox.Font = Enum.Font.Gotham
-SpeedBox.TextSize = 14
-SpeedBox.ClearTextOnFocus = false
-SpeedBox.Parent = Container
-
-Instance.new("UICorner", SpeedBox).CornerRadius = UDim.new(0,8)
-
---// عداد
-local Counter = Instance.new("TextLabel")
-Counter.Size = UDim2.new(1,0,0,25)
-Counter.BackgroundTransparency = 1
-Counter.TextColor3 = Color3.new(1,1,1)
-Counter.Font = Enum.Font.Gotham
-Counter.TextSize = 14
-Counter.Text = "النقاط: 0"
-Counter.Parent = Container
-
---// تحديث العداد
-local function UpdateCounter()
-    Counter.Text = "النقاط: "..#AutoClicker.Circles
+--// تغيير الحالة
+local function SetMode(mode)
+	CurrentMode = mode
+	Status.Text = "الحالة الحالية: "..mode
 end
 
---// إنشاء نقطة
-local function CreateCircle()
-
-    if #AutoClicker.Circles >= Settings.MaxCircles then
-        return
-    end
-
-    local Circle = Instance.new("Frame")
-    Circle.Size = UDim2.new(0,Settings.CircleSize,0,Settings.CircleSize)
-    Circle.Position = UDim2.new(0.5,-20,0.5,-20)
-    Circle.BackgroundColor3 = Color3.fromRGB(255,60,60)
-    Circle.BorderSizePixel = 0
-    Circle.Active = true
-    Circle.Draggable = true
-    Circle.Parent = ScreenGui
-
-    Instance.new("UICorner", Circle).CornerRadius = UDim.new(1,0)
-
-    local Stroke = Instance.new("UIStroke")
-    Stroke.Thickness = 2
-    Stroke.Color = Color3.new(1,1,1)
-    Stroke.Parent = Circle
-
-    local Num = Instance.new("TextLabel")
-    Num.Size = UDim2.new(1,0,1,0)
-    Num.BackgroundTransparency = 1
-    Num.Text = tostring(#AutoClicker.Circles + 1)
-    Num.TextColor3 = Color3.new(1,1,1)
-    Num.Font = Enum.Font.GothamBold
-    Num.TextSize = 15
-    Num.Parent = Circle
-
-    local Data = {
-        GUI = Circle,
-        Enabled = false
-    }
-
-    table.insert(AutoClicker.Circles, Data)
-
-    UpdateCounter()
-end
-
---// حذف نقطة
-local function RemoveCircle()
-
-    if #AutoClicker.Circles <= 0 then
-        return
-    end
-
-    local Last = table.remove(AutoClicker.Circles)
-
-    if Last and Last.GUI then
-        Last.GUI:Destroy()
-    end
-
-    UpdateCounter()
-end
-
---// الضغط التلقائي
-task.spawn(function()
-
-    while true do
-        task.wait()
-
-        if AutoClicker.Enabled then
-
-            for _,Data in ipairs(AutoClicker.Circles) do
-
-                if Data.GUI and Data.GUI.Parent then
-
-                    local Pos = Data.GUI.AbsolutePosition
-                    local Size = Data.GUI.AbsoluteSize
-
-                    local X = Pos.X + (Size.X / 2)
-                    local Y = Pos.Y + (Size.Y / 2)
-
-                    pcall(function()
-
-                        VirtualInputManager:SendMouseButtonEvent(
-                            X,
-                            Y,
-                            0,
-                            true,
-                            game,
-                            0
-                        )
-
-                        task.wait(Settings.ClickDuration)
-
-                        VirtualInputManager:SendMouseButtonEvent(
-                            X,
-                            Y,
-                            0,
-                            false,
-                            game,
-                            0
-                        )
-
-                    end)
-                end
-            end
-
-            task.wait(Settings.ClickInterval)
-        end
-    end
+HitBtn.MouseButton1Click:Connect(function()
+	SetMode("ضرب")
 end)
 
---// تشغيل/إيقاف
+KiBtn.MouseButton1Click:Connect(function()
+	SetMode("KI")
+end)
+
+PressBtn.MouseButton1Click:Connect(function()
+	SetMode("ضغط")
+end)
+
+--// تشغيل وإيقاف
 ToggleBtn.MouseButton1Click:Connect(function()
 
-    AutoClicker.Enabled = not AutoClicker.Enabled
+	Running = not Running
 
-    if AutoClicker.Enabled then
-        ToggleBtn.Text = "⏹ توقيف"
-        ToggleBtn.BackgroundColor3 = Color3.fromRGB(200,60,60)
-    else
-        ToggleBtn.Text = "▶ تشغيل"
-        ToggleBtn.BackgroundColor3 = Color3.fromRGB(0,170,100)
-    end
+	if Running then
+		ToggleBtn.Text = "⏹ توقيف"
+		ToggleBtn.BackgroundColor3 = Color3.fromRGB(200,60,60)
+	else
+		ToggleBtn.Text = "▶ تشغيل"
+		ToggleBtn.BackgroundColor3 = Color3.fromRGB(0,170,100)
+	end
 end)
 
---// إضافة
-AddBtn.MouseButton1Click:Connect(CreateCircle)
+--// السبام
+task.spawn(function()
 
---// حذف
-RemoveBtn.MouseButton1Click:Connect(RemoveCircle)
+	while true do
+		task.wait(Settings.Delay)
 
---// إخفاء
-HideBtn.MouseButton1Click:Connect(function()
+		if Running then
 
-    AutoClicker.Hidden = not AutoClicker.Hidden
+			local Key = Keys[CurrentMode]
 
-    for _,Data in ipairs(AutoClicker.Circles) do
-        Data.GUI.Visible = not AutoClicker.Hidden
-    end
+			pcall(function()
 
-    if AutoClicker.Hidden then
-        HideBtn.Text = "👁 إظهار النقاط"
-    else
-        HideBtn.Text = "👁 إخفاء النقاط"
-    end
+				VirtualInputManager:SendKeyEvent(
+					true,
+					Key,
+					false,
+					game
+				)
+
+				task.wait(0.01)
+
+				VirtualInputManager:SendKeyEvent(
+					false,
+					Key,
+					false,
+					game
+				)
+
+			end)
+		end
+	end
 end)
 
---// سرعة الضغط
-SpeedBox.FocusLost:Connect(function()
-
-    local Num = tonumber(SpeedBox.Text)
-
-    if Num and Num >= 1 then
-        Settings.ClickInterval = Num / 1000
-    else
-        SpeedBox.Text = tostring(Settings.ClickInterval * 1000)
-    end
-end)
-
---// إشعار
-local Notify = Instance.new("TextLabel")
-Notify.Size = UDim2.new(0,220,0,40)
-Notify.Position = UDim2.new(0.5,-110,0,-50)
-Notify.BackgroundColor3 = Color3.fromRGB(0,170,255)
-Notify.Text = "✅ Auto Clicker جاهز"
-Notify.TextColor3 = Color3.new(1,1,1)
-Notify.Font = Enum.Font.GothamBold
-Notify.TextSize = 14
-Notify.Parent = ScreenGui
-
-Instance.new("UICorner", Notify).CornerRadius = UDim.new(0,10)
-
-TweenService:Create(
-    Notify,
-    TweenInfo.new(0.4),
-    {Position = UDim2.new(0.5,-110,0,20)}
-):Play()
-
-task.delay(3,function()
-
-    local t = TweenService:Create(
-        Notify,
-        TweenInfo.new(0.4),
-        {Position = UDim2.new(0.5,-110,0,-50)}
-    )
-
-    t:Play()
-
-    t.Completed:Wait()
-
-    Notify:Destroy()
-end)
-
-print("✅ Auto Clicker Loaded")
+print("✅ Auto Spam Loaded")
